@@ -1,0 +1,33 @@
+package  
+{
+	/**
+	 * ...
+	 * @author Joe Esposito
+	 */
+	public class Assets
+	{
+		[Embed(source = "../assets/graphics/RestartButton.png")]
+		public static const RESTART_BUTTON_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/RestartButtonDown.png")]
+		public static const RESTART_BUTTON_DOWN_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/Cell.png")]
+		public static const CELL_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/CellOver.png")]
+		public static const CELL_OVER_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/CellDown.png")]
+		public static const CELL_DOWN_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/EmptyCell.png")]
+		public static const EMPTY_CELL_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/ExplodedMineCell.png")]
+		public static const EXPLODED_MINE_CELL_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/RevealedMineCell.png")]
+		public static const REVEALED_MINE_CELL_GRAPHIC:Class;
+	}
+}
