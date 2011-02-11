@@ -5,7 +5,7 @@
     <movie disabled="False" />
     <movie input="" />
     <movie path="bin\Minesweeper.swf" />
-    <movie fps="30" />
+    <movie fps="60" />
     <movie width="640" />
     <movie height="480" />
     <movie version="10" />

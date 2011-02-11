@@ -63,7 +63,7 @@ package
 		private var shakeOffsetY:Number = 0;
 		
 		private var isJumping:Boolean = false;
-		private var jumpGravity:Number = 2;
+		private var jumpGravity:Number = 1;
 		private var jumpVelocity:Number;
 		
 		public function Cell(rowIndex:int, columnIndex:int, clickHandler:Function):void
@@ -136,12 +136,12 @@ package
 				y = location.y;
 				if ( --shakeCount > 0 )
 				{
-					x += shakeOffsetX * (shakeCount % 2 == 0 ? 1 : -1);
-					y += shakeOffsetY * (shakeCount % 2 == 0 ? 1 : -1);
+					x += shakeOffsetX * (shakeCount % 4 > 1 ? 1 : -1);
+					y += shakeOffsetY * (shakeCount % 4 > 1 ? 1 : -1);
 					if (shakeCount % 2 == 0)
 					{
-						shakeOffsetX /= 1.8;
-						shakeOffsetY /= 1.8;
+						shakeOffsetX /= 1.3;
+						shakeOffsetY /= 1.3;
 					}
 				}
 			}
@@ -257,12 +257,11 @@ package
 		{
 			x = location.x;
 			y = location.y;
-			
 			jumpVelocity = 1 + Math.random() * 5;
 			isJumping = true;
 		}
 		
-		public function Shake(power:int = 6, duration:int = 10):void
+		public function Shake(power:int = 6, duration:int = 20):void
 		{
 			shakeCount = duration;
 			shakeOffsetX = ((Math.random() * power) + 4) * Math.pow(2, -Math.round(Math.random()));
