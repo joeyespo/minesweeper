@@ -1,14 +1,11 @@
 package  
 {
+	import flash.display.BitmapData;
 	import flash.geom.Point;
 	import flash.text.Font;
-	import flash.text.FontStyle;
-	import flash.ui.Mouse;
-	import flash.ui.MouseCursor;
-	import net.flashpunk.Entity;
-	import net.flashpunk.Graphic;
+	import flash.text.TextFormat;
 	import net.flashpunk.graphics.Image;
-	import net.flashpunk.utils.Input;
+	import net.flashpunk.graphics.Text;
 	import punk.ui.PunkButton;
 	
 	/**
@@ -29,9 +26,11 @@ package
 			0x840084,	// 7
 			0x000000,	// 8
 		];
-		public static const CellSize:int = 24;
 		
+		public static const CellSize:int = 24;
 		public static var FieldOffset:Point = new Point(34, 60);
+		
+		private static var EmptyCellGraphics:Array = CreateNumberedCells();
 		
 		private var rowIndex:int;
 		private var columnIndex:int;
@@ -45,14 +44,21 @@ package
 		public function Cell(rowIndex:int, columnIndex:int, clickHandler:Function):void
 		{
 			super(columnIndex * CellSize + FieldOffset.x, rowIndex * CellSize + FieldOffset.y, CellSize, CellSize, "", onClick);
+			normal = new Image(Assets.CELL_GRAPHIC);
+			hover = new Image(Assets.CELL_OVER_GRAPHIC);
+			down = new Image(Assets.CELL_DOWN_GRAPHIC);
 			
 			this.rowIndex = rowIndex;
 			this.columnIndex = columnIndex;
 			this.clickHandler = clickHandler;
-			
-			normal = new Image(Assets.CELL_GRAPHIC);
-			hover = new Image(Assets.CELL_OVER_GRAPHIC);
-			down = new Image(Assets.CELL_DOWN_GRAPHIC);
+		}
+		
+		private static function CreateNumberedCells():Array
+		{
+			var emptyCellGraphics:Array = [];
+			for (var index:int = 0; index <= 8; ++index)
+				emptyCellGraphics[index] = CreateNumberedCell(index);
+			return emptyCellGraphics;
 		}
 		
 		private function onClick():void
@@ -125,12 +131,7 @@ package
 			}
 			else
 			{
-				if (adjacentMineCount > 0)
-				{
-					label.text = String(adjacentMineCount);
-					label.color = Colors[adjacentMineCount];
-				}
-				normal = new Image(Assets.EMPTY_CELL_GRAPHIC);
+				normal = EmptyCellGraphics[adjacentMineCount];
 			}
 			hover = normal;
 			down = normal;
@@ -139,6 +140,28 @@ package
 		public function Flag():void
 		{
 			// TODO: implement
+		}
+		
+		private static function CreateNumberedCell(value:int):Image
+		{
+			if (value == 0)
+				return new Image(Assets.EMPTY_CELL_GRAPHIC);
+			
+			var emptyCell:Image = new Image(Assets.EMPTY_CELL_GRAPHIC);
+			var cellWithText:BitmapData = new BitmapData(CellSize, CellSize, false, 0xFFFFFF);
+			Text.font = "default";
+			//Text.size = 12;
+			//var textImage:Text = new Text(String(value), 7, 5, CellSize, CellSize);
+			var textImage:Text = new Text(String(value), 6, 3, CellSize, CellSize);
+			textImage.alpha = .8;
+			if (value == 1)
+				++textImage.x;
+			textImage.color = Colors[value];
+			
+			emptyCell.render(cellWithText, new Point(0, 0), new Point(0, 0));
+			textImage.render(cellWithText, new Point(0, 0), new Point(0, 0));
+			
+			return new Image(cellWithText);
 		}
 	}
 }

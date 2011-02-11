@@ -1,9 +1,7 @@
 package 
 {
-	import net.flashpunk.debug.Console;
 	import net.flashpunk.Engine;
 	import net.flashpunk.FP;
-	import net.flashpunk.utils.Key;
 	
 	/**
 	 * ...

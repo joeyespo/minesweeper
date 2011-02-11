@@ -1,15 +1,7 @@
 package  
 {
-	import flash.geom.Rectangle;
-	import net.flashpunk.Engine;
-	import net.flashpunk.Entity;
 	import net.flashpunk.FP;
-	import net.flashpunk.Graphic;
-	import net.flashpunk.graphics.Backdrop;
-	import net.flashpunk.graphics.Graphiclist;
 	import net.flashpunk.graphics.Image;
-	import net.flashpunk.graphics.Stamp;
-	import net.flashpunk.graphics.Text;
 	import net.flashpunk.World;
 	import punk.ui.PunkButton;
 	import punk.ui.PunkLabel;

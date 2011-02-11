@@ -1,5 +1,5 @@
 syntax: glob
 
+# Build files
 obj/*
-Obj/*
-OBJ/*
+bin/*.swf
