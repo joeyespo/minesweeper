@@ -6,6 +6,7 @@ package
 	import flash.text.TextFormat;
 	import net.flashpunk.graphics.Image;
 	import net.flashpunk.graphics.Text;
+	import net.flashpunk.tweens.motion.LinearMotion;
 	import punk.ui.PunkButton;
 	
 	/**
@@ -14,7 +15,9 @@ package
 	 */
 	public class Cell extends PunkButton
 	{
-        // The text colors for cells, the index position represents the number of adjacent mines
+        /**
+         * The text colors for cells, the index position represents the number of adjacent mines
+         */
         public static const Colors:Array = [
 			0x000000,	// (Not used)
 			0x0004FF,	// 1
@@ -27,8 +30,15 @@ package
 			0x000000,	// 8
 		];
 		
+		/**
+		 * The size of each cell. This should be the same size as the cell's images.
+		 */
 		public static const CellSize:int = 24;
-		public static var FieldOffset:Point = new Point(34, 60);
+		
+		/**
+		 * The cell's offset to be considered in the field.
+		 */
+		public static const FieldOffset:Point = new Point(34, 60);
 		
 		private static var EmptyCellGraphics:Array = CreateNumberedCells();
 		private static var CellGraphic:Image = new Image(Assets.CELL_GRAPHIC);
@@ -45,17 +55,27 @@ package
 		private var isMine:Boolean = false;
 		private var isFlagged:Boolean = false;
 		private var isRevealed:Boolean = false;
+		private var isDeactivated:Boolean = false;
+		
+		private var location:Point;
+		private var shakeCount:int = 0;
+		private var shakeOffsetX:Number = 0;
+		private var shakeOffsetY:Number = 0;
+		
+		private var isJumping:Boolean = false;
+		private var jumpGravity:Number = 2;
+		private var jumpVelocity:Number;
 		
 		public function Cell(rowIndex:int, columnIndex:int, clickHandler:Function):void
 		{
 			super(columnIndex * CellSize + FieldOffset.x, rowIndex * CellSize + FieldOffset.y, CellSize, CellSize, "", onClick);
-			normal = CellGraphic;
-			hover = CellHoverGraphic;
-			down = CellDownGraphic;
 			
+			this.location = new Point(x, y);
 			this.rowIndex = rowIndex;
 			this.columnIndex = columnIndex;
 			this.clickHandler = clickHandler;
+			
+			Reset();
 		}
 		
 		private static function CreateNumberedCells():Array
@@ -94,8 +114,44 @@ package
 			return new Image(cellWithText);
 		}
 		
+		override public function update():void
+		{
+			super.update();
+			
+			if (isJumping)
+			{
+				y -= jumpVelocity;
+				if (y < location.y)
+					jumpVelocity -= jumpGravity;
+				else
+				{
+					isJumping = false;
+					y = location.y;
+				}
+			}
+			
+			if (shakeCount > 0)
+			{
+				x = location.x;
+				y = location.y;
+				if ( --shakeCount > 0 )
+				{
+					x += shakeOffsetX * (shakeCount % 2 == 0 ? 1 : -1);
+					y += shakeOffsetY * (shakeCount % 2 == 0 ? 1 : -1);
+					if (shakeCount % 2 == 0)
+					{
+						shakeOffsetX /= 1.8;
+						shakeOffsetY /= 1.8;
+					}
+				}
+			}
+		}
+		
 		private function onClick():void
 		{
+			if (isDeactivated)
+				return;
+			
 			if (clickHandler != null)
 				clickHandler(this);
 		}
@@ -144,12 +200,29 @@ package
 		}
 		
 		/**
+		 * Resets the cell.
+		 * @param shake Whether or not to shake.
+		 */
+		public function Reset():void
+		{
+			isDeactivated = false;
+			
+			adjacentMineCount = 0;
+			isMine = false;
+			isFlagged = false;
+			isRevealed = false;
+			
+			normal = CellGraphic;
+			hover = CellHoverGraphic;
+			down = CellDownGraphic;
+		}
+		
+		/**
 		 * Deactivates the cell so it no longer responds to the player.
 		 */
 		public function Deactivate():void
 		{
-			callback = null;
-			
+			isDeactivated = true;
 			hover = normal;
 			down = normal;
 		}
@@ -163,8 +236,8 @@ package
 			if (isRevealed)
 				return;
 			
-			callback = null;
 			isRevealed = true;
+			isDeactivated = true;
 			
 			if (isMine)
 			{
@@ -178,6 +251,22 @@ package
 			}
 			hover = normal;
 			down = normal;
+		}
+		
+		public function Jump():void
+		{
+			x = location.x;
+			y = location.y;
+			
+			jumpVelocity = 1 + Math.random() * 5;
+			isJumping = true;
+		}
+		
+		public function Shake(power:int = 6, duration:int = 10):void
+		{
+			shakeCount = duration;
+			shakeOffsetX = ((Math.random() * power) + 4) * Math.pow(2, -Math.round(Math.random()));
+			shakeOffsetY = ((Math.random() * power) + 4) * Math.pow(2, -Math.round(Math.random()));
 		}
 		
 		/**

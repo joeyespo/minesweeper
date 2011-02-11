@@ -16,6 +16,7 @@ package
 		private var winNotice:WinNotice = null;
 		private var mineCountLabel:PunkLabel;
 		private var restartButton:PunkButton;
+		private var flagButton:PunkButton;
 		
 		private var difficulty:int;
 		private var cellRowCount:int;
@@ -35,6 +36,10 @@ package
 		
 		override public function begin():void 
 		{
+			difficulty = 2;
+			SetupDifficulty();
+			AddCells();
+			
 			mineCountLabel = new PunkLabel("Mines: 0", 4, 4, 60, 24);
 			mineCountLabel.color = 0xFFFFFF;
 			mineCountLabel.background = false;
@@ -46,14 +51,27 @@ package
 			restartButton.down = restartButton.hover;
 			add(restartButton);
 			
-			NewGame(2);
+			NewGame(true);
 		}
 		
 		override public function end():void 
 		{
 			if (isPlaying)
 				EndGame(false);
-			Reset();
+			
+			if (winNotice != null)
+			{
+				remove(winNotice);
+				winNotice = null;
+			}
+			
+			if (cellRows != null)
+			{
+				for (var rowIndex:int = 0; rowIndex < cellRowCount; ++rowIndex)
+					for (var columnIndex:int = 0; columnIndex < cellColumnCount; ++columnIndex)
+						remove(cellRows[rowIndex][columnIndex]);
+				cellRows = null;
+			}
 		}
 		
 		private function Restart_Clicked():void
@@ -61,7 +79,7 @@ package
 			// TODO: Select difficulty
 			// TODO: Confirm, if game is in progress
 			
-			NewGame(2);
+			NewGame();
 		}
 		
 		private function Cell_Clicked(cell:Cell):void
@@ -89,16 +107,13 @@ package
 		}
 		
 		/**
-		 * @param difficulty: 0 - Easy, 1 - Medium, 2 - Hard
+		 * Starts a new game.
+		 * @param isFirstGame Whether this is the first time a new game is played.
 		 */
-		private function NewGame(difficulty:int):void
+		private function NewGame(isFirstGame:Boolean = false):void
 		{
-			this.difficulty = difficulty;
-			
-			Reset();
-			
-			SetupDifficulty();
-			AddCells();
+			if (!isFirstGame)
+				Reset();
 			
 			mineCountLabel.text = "Mines: " + mineCount;
 			
@@ -126,12 +141,14 @@ package
 				winNotice = null;
 			}
 			
-			if (cellRows != null)
+			for (var rowIndex:int = 0; rowIndex < cellRowCount; ++rowIndex)
 			{
-				for (var rowIndex:int = 0; rowIndex < cellRowCount; ++rowIndex)
-					for (var columnIndex:int = 0; columnIndex < cellColumnCount; ++columnIndex)
-						remove(cellRows[rowIndex][columnIndex]);
-				cellRows = null;
+				for (var columnIndex:int = 0; columnIndex < cellColumnCount; ++columnIndex)
+				{
+					var cell:Cell = cellRows[rowIndex][columnIndex];
+					cell.Reset();
+					cell.Jump();
+				}
 			}
 			
 			isMinefieldSetup = false;
@@ -143,6 +160,7 @@ package
 		private function SetupDifficulty():void
 		{
 			// TODO: Tweak these settings
+			// TODO: Add/remove or show/hide cells
 			
 			switch(difficulty)
 			{
@@ -235,6 +253,7 @@ package
 						else
 							cell.Deactivate();
 					}
+					cell.Shake();
 				}
 			}
 		}
