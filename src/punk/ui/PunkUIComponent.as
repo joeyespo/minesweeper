@@ -10,7 +10,7 @@ package punk.ui
 	
 	public class PunkUIComponent extends Entity
 	{
-		[Embed(source = 'defaultSkin.png')] protected var _defaultSkin:Class;
+		[Embed(source = 'defaultSkin.gif')] protected var _defaultSkin:Class;
 		
 		/** class constructor
 		 * @param x - position of the component on the X axis
@@ -22,12 +22,7 @@ package punk.ui
 			super(x, y);
 			this.width = width;
 			this.height = height;
-			_skin = skin ? skin : _defaultSkin;
-		}
-		
-		override public function update():void 
-		{
-			super.update();
+			_skin = skin || _defaultSkin;
 		}
 		
 		protected var _skin:Class;

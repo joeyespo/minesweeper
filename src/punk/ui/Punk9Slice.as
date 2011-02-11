@@ -1,10 +1,11 @@
 package punk.ui 
 {
+	import flash.display.BitmapData;
+	import flash.geom.Point;
 	import flash.geom.Rectangle;
-	import net.flashpunk.graphics.Image;
-	import flash.geom.Point
-	import flash.display.BitmapData
+	
 	import net.flashpunk.FP;
+	import net.flashpunk.graphics.Image;
 	/**
 	 * ...
 	 * @author AClockWorkLemon

@@ -71,6 +71,7 @@ package punk.ui
 			//HERE GETTING GRAPHICS FROM IMAGE
 			this.callback = callback;
 			label = new PunkLabel(text, x, y, width, height);
+			label.text = text;
 			label.color = 0x000000;
 			label.background = false;
 			active ? this.graphic = normal : this.graphic = inactive;
