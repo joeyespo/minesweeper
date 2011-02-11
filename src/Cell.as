@@ -31,6 +31,11 @@ package
 		public static var FieldOffset:Point = new Point(34, 60);
 		
 		private static var EmptyCellGraphics:Array = CreateNumberedCells();
+		private static var CellGraphic:Image = new Image(Assets.CELL_GRAPHIC);
+		private static var CellHoverGraphic:Image = new Image(Assets.CELL_OVER_GRAPHIC);
+		private static var CellDownGraphic:Image = new Image(Assets.CELL_DOWN_GRAPHIC);
+		private static var ExplodedMineCellGraphic:Image = new Image(Assets.EXPLODED_MINE_CELL_GRAPHIC);
+		private static var RevealedMineCellGraphic:Image = new Image(Assets.REVEALED_MINE_CELL_GRAPHIC);
 		
 		private var rowIndex:int;
 		private var columnIndex:int;
@@ -44,9 +49,9 @@ package
 		public function Cell(rowIndex:int, columnIndex:int, clickHandler:Function):void
 		{
 			super(columnIndex * CellSize + FieldOffset.x, rowIndex * CellSize + FieldOffset.y, CellSize, CellSize, "", onClick);
-			normal = new Image(Assets.CELL_GRAPHIC);
-			hover = new Image(Assets.CELL_OVER_GRAPHIC);
-			down = new Image(Assets.CELL_DOWN_GRAPHIC);
+			normal = CellGraphic;
+			hover = CellHoverGraphic;
+			down = CellDownGraphic;
 			
 			this.rowIndex = rowIndex;
 			this.columnIndex = columnIndex;
@@ -61,9 +66,38 @@ package
 			return emptyCellGraphics;
 		}
 		
+		/**
+		 * Creates a new empty cell image with the specified number 
+		 * @param number The number to draw on the image.
+		 * @return The image with the associated number drawn on it.
+		 */
+		private static function CreateNumberedCell(number:int):Image
+		{
+			if (number == 0)
+				return new Image(Assets.EMPTY_CELL_GRAPHIC);
+			
+			var emptyCell:Image = new Image(Assets.EMPTY_CELL_GRAPHIC);
+			var cellWithText:BitmapData = new BitmapData(CellSize, CellSize, false, 0xFFFFFF);
+			Text.font = "default";
+			var textImage:Text = new Text(String(number), 6, 3, CellSize, CellSize);
+			// Lighten the text slightly, giving it a more pastellish look
+			textImage.alpha = .8;
+			// Adjustment for the font being used, make the "1" be centered with the other numbers
+			if (number == 1)
+				++textImage.x;
+			// Use the appropriate color, as defined above
+			textImage.color = Colors[number];
+			
+			emptyCell.render(cellWithText, new Point(0, 0), new Point(0, 0));
+			textImage.render(cellWithText, new Point(0, 0), new Point(0, 0));
+			
+			return new Image(cellWithText);
+		}
+		
 		private function onClick():void
 		{
-			clickHandler(this);
+			if (clickHandler != null)
+				clickHandler(this);
 		}
 		
 		public function get RowIndex():int
@@ -109,6 +143,9 @@ package
 			++adjacentMineCount;
 		}
 		
+		/**
+		 * Deactivates the cell so it no longer responds to the player.
+		 */
 		public function Deactivate():void
 		{
 			callback = null;
@@ -117,17 +154,20 @@ package
 			down = normal;
 		}
 		
-		public function Reveal(byUser:Boolean = true):void
+		/**
+		 * Reveals the cell's contents.
+		 * @param byPlayer Whether or not the player caused the revealing.
+		 */
+		public function Reveal(byPlayer:Boolean = true):void
 		{
 			callback = null;
 			isRevealed = true;
 			
 			if (isMine)
 			{
-				if (byUser)
-					normal = new Image(Assets.EXPLODED_MINE_CELL_GRAPHIC);
-				else
-					normal = new Image(Assets.REVEALED_MINE_CELL_GRAPHIC);
+				normal = byPlayer
+					? ExplodedMineCellGraphic
+					: RevealedMineCellGraphic;
 			}
 			else
 			{
@@ -137,31 +177,12 @@ package
 			down = normal;
 		}
 		
+		/**
+		 * Puts a flag on the cell.
+		 */
 		public function Flag():void
 		{
 			// TODO: implement
-		}
-		
-		private static function CreateNumberedCell(value:int):Image
-		{
-			if (value == 0)
-				return new Image(Assets.EMPTY_CELL_GRAPHIC);
-			
-			var emptyCell:Image = new Image(Assets.EMPTY_CELL_GRAPHIC);
-			var cellWithText:BitmapData = new BitmapData(CellSize, CellSize, false, 0xFFFFFF);
-			Text.font = "default";
-			//Text.size = 12;
-			//var textImage:Text = new Text(String(value), 7, 5, CellSize, CellSize);
-			var textImage:Text = new Text(String(value), 6, 3, CellSize, CellSize);
-			textImage.alpha = .8;
-			if (value == 1)
-				++textImage.x;
-			textImage.color = Colors[value];
-			
-			emptyCell.render(cellWithText, new Point(0, 0), new Point(0, 0));
-			textImage.render(cellWithText, new Point(0, 0), new Point(0, 0));
-			
-			return new Image(cellWithText);
 		}
 	}
 }
