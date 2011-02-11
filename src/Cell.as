@@ -160,6 +160,9 @@ package
 		 */
 		public function Reveal(byPlayer:Boolean = true):void
 		{
+			if (isRevealed)
+				return;
+			
 			callback = null;
 			isRevealed = true;
 			
