@@ -1,7 +1,9 @@
 package  
 {
 	import net.flashpunk.FP;
+	import net.flashpunk.Graphic;
 	import net.flashpunk.graphics.Image;
+	import net.flashpunk.graphics.Text;
 	import net.flashpunk.World;
 	import punk.ui.PunkButton;
 	import punk.ui.PunkLabel;
@@ -27,6 +29,7 @@ package
 		private var score:int;
 		private var cellRows:Array;
 		private var isMinefieldSetup:Boolean;
+		private var isFlagMode:Boolean;
 		private var safeCellCount:int;
 		private var revealedCellCount:int;
 		
@@ -40,7 +43,8 @@ package
 			SetupDifficulty();
 			AddCells();
 			
-			mineCountLabel = new PunkLabel("Mines: 0", 4, 4, 60, 24);
+			PunkLabel.size = 24;
+			mineCountLabel = new PunkLabel("Mines: 0", 4, 4, 128, 32);
 			mineCountLabel.color = 0xFFFFFF;
 			mineCountLabel.background = false;
 			add(mineCountLabel);
@@ -50,6 +54,12 @@ package
 			restartButton.hover = new Image(Assets.RESTART_BUTTON_DOWN_GRAPHIC);
 			restartButton.down = restartButton.hover;
 			add(restartButton);
+			
+			flagButton = new PunkButton(((FP.width) - 32) - (8), 4, 32, 32, "", Flag_Clicked);
+			flagButton.normal = new Image(Assets.FLAG_BUTTON_GRAPHIC);
+			flagButton.hover = new Image(Assets.FLAG_BUTTON_OVER_GRAPHIC);
+			flagButton.down = new Image(Assets.FLAG_BUTTON_DOWN_GRAPHIC);
+			add(flagButton);
 			
 			NewGame(true);
 		}
@@ -80,6 +90,20 @@ package
 			// TODO: Confirm, if game is in progress
 			
 			NewGame();
+		}
+		
+		private function Flag_Clicked():void
+		{
+			isFlagMode = !isFlagMode;
+			
+			for (var rowIndex:int = 0; rowIndex < cellRowCount; ++rowIndex)
+			{
+				for (var columnIndex:int = 0; columnIndex < cellColumnCount; ++columnIndex)
+				{
+					var cell:Cell = cellRows[rowIndex][columnIndex];
+					cell.SetFlagMode(isFlagMode);
+				}
+			}
 		}
 		
 		private function Cell_Clicked(cell:Cell):void
@@ -153,6 +177,7 @@ package
 			
 			isMinefieldSetup = false;
 			score = 0;
+			isFlagMode = false;
 			revealedCellCount = 0;
 			safeCellCount = 0;
 		}

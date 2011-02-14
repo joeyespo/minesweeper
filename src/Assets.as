@@ -12,6 +12,15 @@ package
 		[Embed(source = "../assets/graphics/RestartButtonDown.png")]
 		public static const RESTART_BUTTON_DOWN_GRAPHIC:Class;
 		
+		[Embed(source = "../assets/graphics/FlagButton.png")]
+		public static const FLAG_BUTTON_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/FlagButtonOver.png")]
+		public static const FLAG_BUTTON_OVER_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/FlagButtonDown.png")]
+		public static const FLAG_BUTTON_DOWN_GRAPHIC:Class;
+		
 		[Embed(source = "../assets/graphics/Cell.png")]
 		public static const CELL_GRAPHIC:Class;
 		
@@ -23,6 +32,18 @@ package
 		
 		[Embed(source = "../assets/graphics/EmptyCell.png")]
 		public static const EMPTY_CELL_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/FlagCell.png")]
+		public static const FLAG_CELL_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/FlagCellOver.png")]
+		public static const FLAG_CELL_OVER_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/FlagCellDown.png")]
+		public static const FLAG_CELL_DOWN_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/FlagEmptyCell.png")]
+		public static const FLAG_EMPTY_CELL_GRAPHIC:Class;
 		
 		[Embed(source = "../assets/graphics/ExplodedMineCell.png")]
 		public static const EXPLODED_MINE_CELL_GRAPHIC:Class;

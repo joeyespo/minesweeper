@@ -1,6 +1,7 @@
 package  
 {
 	import flash.display.BitmapData;
+	import flash.geom.ColorTransform;
 	import flash.geom.Point;
 	import flash.text.Font;
 	import flash.text.TextFormat;
@@ -44,6 +45,10 @@ package
 		private static var CellGraphic:Image = new Image(Assets.CELL_GRAPHIC);
 		private static var CellHoverGraphic:Image = new Image(Assets.CELL_OVER_GRAPHIC);
 		private static var CellDownGraphic:Image = new Image(Assets.CELL_DOWN_GRAPHIC);
+		private static var FlagCellGraphic:Image = new Image(Assets.FLAG_CELL_GRAPHIC);
+		private static var FlagOverGraphic:Image = new Image(Assets.FLAG_CELL_OVER_GRAPHIC);
+		private static var FlagDownGraphic:Image = new Image(Assets.FLAG_CELL_DOWN_GRAPHIC);
+		private static var FlagEmptyCellGraphic:Image = new Image(Assets.FLAG_EMPTY_CELL_GRAPHIC);
 		private static var ExplodedMineCellGraphic:Image = new Image(Assets.EXPLODED_MINE_CELL_GRAPHIC);
 		private static var RevealedMineCellGraphic:Image = new Image(Assets.REVEALED_MINE_CELL_GRAPHIC);
 		
@@ -215,6 +220,49 @@ package
 			normal = CellGraphic;
 			hover = CellHoverGraphic;
 			down = CellDownGraphic;
+		}
+		
+		/**
+		 * Sets whether the cell is in flag mode.
+		 * @param isFlagMode Whether the cell is currently in flag mode.
+		 */
+		public function SetFlagMode(isFlagMode:Boolean):void
+		{
+			if (isFlagged)
+				return;
+			
+			if (isFlagMode)
+			{
+				if (isRevealed)
+				{
+					if (!isMine)
+					{
+						normal = FlagEmptyCellGraphic;
+						hover = normal;
+						down = normal;
+					}
+					return;
+				}
+				normal = FlagCellGraphic;
+				hover = FlagOverGraphic;
+				down = FlagDownGraphic;
+			}
+			else
+			{
+				if (isRevealed)
+				{
+					if (!isMine)
+					{
+						normal = EmptyCellGraphics[adjacentMineCount];
+						hover = normal;
+						down = normal;
+					}
+					return;
+				}
+				normal = CellGraphic;
+				hover = CellHoverGraphic;
+				down = CellDownGraphic;
+			}
 		}
 		
 		/**
