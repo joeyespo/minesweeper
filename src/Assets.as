@@ -21,6 +21,9 @@ package
 		[Embed(source = "../assets/graphics/FlagButtonDown.png")]
 		public static const FLAG_BUTTON_DOWN_GRAPHIC:Class;
 		
+		[Embed(source = "../assets/graphics/FlagButtonToggled.png")]
+		public static const FLAG_BUTTON_TOGGLED_GRAPHIC:Class;
+		
 		[Embed(source = "../assets/graphics/Cell.png")]
 		public static const CELL_GRAPHIC:Class;
 		
@@ -44,5 +47,8 @@ package
 		
 		[Embed(source = "../assets/graphics/FlaggedWrongCell.png")]
 		public static const FLAGGED_WRONG_CELL_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/Mine.png")]
+		public static const MINE_GRAPHIC:Class;
 	}
 }

@@ -4,6 +4,11 @@ package
 	import net.flashpunk.Graphic;
 	import net.flashpunk.graphics.Image;
 	import net.flashpunk.graphics.Text;
+	import net.flashpunk.Tween;
+	import net.flashpunk.tweens.misc.ColorTween;
+	import net.flashpunk.tweens.motion.LinearMotion;
+	import net.flashpunk.utils.Input;
+	import net.flashpunk.utils.Key;
 	import net.flashpunk.World;
 	import punk.ui.PunkButton;
 	import punk.ui.PunkLabel;
@@ -15,6 +20,9 @@ package
 	 */
 	public class GameWorld extends World
 	{
+		private static var FlagButtonGraphic:Image = new Image(Assets.FLAG_BUTTON_GRAPHIC);
+		private static var FlagButtonToggledGraphic:Image = new Image(Assets.FLAG_BUTTON_TOGGLED_GRAPHIC);
+		
 		private var winNotice:WinNotice = null;
 		private var mineCountLabel:PunkLabel;
 		private var restartButton:PunkButton;
@@ -23,15 +31,18 @@ package
 		private var difficulty:int;
 		private var cellRowCount:int;
 		private var cellColumnCount:int;
-		private var mineCount:int
+		private var mineCount:int;
+		private var activeFlagCount:int;
 		
 		private var isPlaying:Boolean = false;
 		private var score:int;
 		private var cellRows:Array;
 		private var isMinefieldSetup:Boolean;
-		private var isFlagMode:Boolean;
+		private var isFlagModeByButton:Boolean;
+		private var isFlagModeByShift:Boolean;
 		private var safeCellCount:int;
 		private var revealedCellCount:int;
+		private var colorTween:ColorTween;
 		
 		public function GameWorld():void
 		{
@@ -44,7 +55,7 @@ package
 			AddCells();
 			
 			PunkLabel.size = 24;
-			mineCountLabel = new PunkLabel("Mines: 0", 4, 4, 128, 32);
+			mineCountLabel = new PunkLabel("Mines: 0", 4, 4, 300, 32);
 			mineCountLabel.color = 0xFFFFFF;
 			mineCountLabel.background = false;
 			add(mineCountLabel);
@@ -55,8 +66,8 @@ package
 			restartButton.down = restartButton.hover;
 			add(restartButton);
 			
-			flagButton = new PunkButton(((FP.width) - 32) - (8), 4, 32, 32, "", Flag_Clicked);
-			flagButton.normal = new Image(Assets.FLAG_BUTTON_GRAPHIC);
+			flagButton = new PunkButton(((FP.width) - 32) - (8), 4, 32, 32, "", FlagButton_Clicked);
+			flagButton.normal = FlagButtonGraphic;
 			flagButton.hover = new Image(Assets.FLAG_BUTTON_OVER_GRAPHIC);
 			flagButton.down = new Image(Assets.FLAG_BUTTON_DOWN_GRAPHIC);
 			add(flagButton);
@@ -84,6 +95,24 @@ package
 			}
 		}
 		
+		override public function update():void 
+		{
+			if (isPlaying)
+			{
+				// Check for and set flag mode using the shortcut key
+				if (Input.check(Key.SHIFT) != isFlagModeByShift)
+				{
+					isFlagModeByShift = !isFlagModeByShift;
+					FlagModeChanged();
+				}
+			}
+			
+			if (colorTween != null)
+				FP.screen.color = colorTween.color;
+			
+			super.update();
+		}
+		
 		private function Restart_Clicked():void
 		{
 			// TODO: Select difficulty
@@ -92,23 +121,32 @@ package
 			NewGame();
 		}
 		
-		private function Flag_Clicked():void
+		private function FlagButton_Clicked():void
 		{
-			isFlagMode = !isFlagMode;
+			if (!isPlaying)
+				return;
 			
+			isFlagModeByButton = !isFlagModeByButton;
+			FlagModeChanged();
 		}
 		
 		private function Cell_Clicked(cell:Cell):void
 		{
 			if (!isPlaying)
 				return;
+			
 			if (!isMinefieldSetup)
 				SetupMinefield(cell.RowIndex, cell.ColumnIndex);
 			
 			// Check for flag mode
-			if (isFlagMode)
+			if (IsFlagMode)
 			{
 				cell.ToggleFlag();
+				if (cell.IsFlagged)
+					++activeFlagCount;
+				else
+					--activeFlagCount;
+				mineCountLabel.text = "Mines: " + (mineCount - activeFlagCount);
 				return;
 			}
 			// Check whether cell was previously flagged, ignoring the click
@@ -140,6 +178,10 @@ package
 				Reset();
 			
 			mineCountLabel.text = "Mines: " + mineCount;
+			flagButton.active = true;
+			
+			if ((FP.screen.color & 0x00FFFFFF) != 0x000000)
+				FadeToColor(0x000000);
 			
 			isPlaying = true;
 		}
@@ -154,11 +196,18 @@ package
 				
 				winNotice = new WinNotice();
 				add(winNotice);
+				
+				mineCountLabel.text = "Mines: 0";
+				
+				FadeToColor(0x88CC88, 1.0);
 			}
 			else
 			{
 				DeactivateAndRevealAllMines();
 			}
+			
+			flagButton.normal = FlagButtonGraphic;
+			flagButton.active = false;
 		}
 		
 		private function Reset():void
@@ -181,9 +230,11 @@ package
 			
 			isMinefieldSetup = false;
 			score = 0;
-			isFlagMode = false;
+			isFlagModeByButton = false;
+			isFlagModeByShift = false;
 			revealedCellCount = 0;
 			safeCellCount = 0;
+			activeFlagCount = 0;
 		}
 		
 		private function SetupDifficulty():void
@@ -206,9 +257,35 @@ package
 				default:
 					cellRowCount = 16;
 					cellColumnCount = 24;
-					mineCount = 5;
+					mineCount = 25;
 					break;
 			}
+		}
+		
+		private function get IsFlagMode():Boolean
+		{
+			return isFlagModeByButton || isFlagModeByShift;
+		}
+		
+		private function FlagModeChanged():void
+		{
+			FadeToColor(IsFlagMode ? 0x444422 : 0x000000);
+			
+			flagButton.normal = IsFlagMode
+				? FlagButtonToggledGraphic
+				: FlagButtonGraphic;
+		}
+		
+		private function FadeToColor(color:uint, duration:Number=0.2):void
+		{
+			if (colorTween != null)
+			{
+				removeTween(colorTween);
+				colorTween = null;
+			}
+			colorTween = new ColorTween(function():void { colorTween = null; });
+			colorTween.tween(duration, FP.screen.color, color);
+			addTween(colorTween);
 		}
 		
 		private function AddCells():void
