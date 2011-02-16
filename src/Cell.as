@@ -41,16 +41,14 @@ package
 		 */
 		public static const FieldOffset:Point = new Point(34, 60);
 		
-		private static var EmptyCellGraphics:Array = CreateNumberedCells();
 		private static var CellGraphic:Image = new Image(Assets.CELL_GRAPHIC);
 		private static var CellHoverGraphic:Image = new Image(Assets.CELL_OVER_GRAPHIC);
 		private static var CellDownGraphic:Image = new Image(Assets.CELL_DOWN_GRAPHIC);
-		private static var FlagCellGraphic:Image = new Image(Assets.FLAG_CELL_GRAPHIC);
-		private static var FlagOverGraphic:Image = new Image(Assets.FLAG_CELL_OVER_GRAPHIC);
-		private static var FlagDownGraphic:Image = new Image(Assets.FLAG_CELL_DOWN_GRAPHIC);
-		private static var FlagEmptyCellGraphic:Image = new Image(Assets.FLAG_EMPTY_CELL_GRAPHIC);
+		private static var FlaggedCellGraphic:Image = new Image(Assets.FLAGGED_CELL_GRAPHIC);
+		private static var EmptyCellGraphics:Array = CreateNumberedCells();
 		private static var ExplodedMineCellGraphic:Image = new Image(Assets.EXPLODED_MINE_CELL_GRAPHIC);
 		private static var RevealedMineCellGraphic:Image = new Image(Assets.REVEALED_MINE_CELL_GRAPHIC);
+		private static var FlaggedWrongCellGraphic:Image = new Image(Assets.FLAGGED_WRONG_CELL_GRAPHIC);
 		
 		private var rowIndex:int;
 		private var columnIndex:int;
@@ -192,11 +190,7 @@ package
 		
 		public function get IsFlagged():Boolean
 		{
-			return isMine;
-		}
-		public function set IsFlagged(value:Boolean):void
-		{
-			isFlagged = value;
+			return isFlagged;
 		}
 		
 		public function IncreaseAdjacentMineCount():void
@@ -223,49 +217,6 @@ package
 		}
 		
 		/**
-		 * Sets whether the cell is in flag mode.
-		 * @param isFlagMode Whether the cell is currently in flag mode.
-		 */
-		public function SetFlagMode(isFlagMode:Boolean):void
-		{
-			if (isFlagged)
-				return;
-			
-			if (isFlagMode)
-			{
-				if (isRevealed)
-				{
-					if (!isMine)
-					{
-						normal = FlagEmptyCellGraphic;
-						hover = normal;
-						down = normal;
-					}
-					return;
-				}
-				normal = FlagCellGraphic;
-				hover = FlagOverGraphic;
-				down = FlagDownGraphic;
-			}
-			else
-			{
-				if (isRevealed)
-				{
-					if (!isMine)
-					{
-						normal = EmptyCellGraphics[adjacentMineCount];
-						hover = normal;
-						down = normal;
-					}
-					return;
-				}
-				normal = CellGraphic;
-				hover = CellHoverGraphic;
-				down = CellDownGraphic;
-			}
-		}
-		
-		/**
 		 * Deactivates the cell so it no longer responds to the player.
 		 */
 		public function Deactivate():void
@@ -289,13 +240,18 @@ package
 			
 			if (isMine)
 			{
-				normal = byPlayer
-					? ExplodedMineCellGraphic
-					: RevealedMineCellGraphic;
+				if (!isFlagged)
+				{
+					normal = byPlayer
+						? ExplodedMineCellGraphic
+						: RevealedMineCellGraphic;
+				}
 			}
 			else
 			{
-				normal = EmptyCellGraphics[adjacentMineCount];
+				normal = isFlagged
+					? FlaggedWrongCellGraphic
+					: EmptyCellGraphics[adjacentMineCount];
 			}
 			hover = normal;
 			down = normal;
@@ -319,9 +275,25 @@ package
 		/**
 		 * Puts a flag on the cell.
 		 */
-		public function Flag():void
+		public function ToggleFlag():void
 		{
-			// TODO: implement
+			if (isRevealed || isDeactivated)
+				return;
+			
+			isFlagged = !isFlagged;
+			
+			if (isFlagged)
+			{
+				normal = FlaggedCellGraphic;
+				hover = normal;
+				down = normal;
+			}
+			else
+			{
+				normal = CellGraphic;
+				hover = CellHoverGraphic;
+				down = CellDownGraphic;
+			}
 		}
 	}
 }

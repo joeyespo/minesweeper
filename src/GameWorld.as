@@ -96,14 +96,6 @@ package
 		{
 			isFlagMode = !isFlagMode;
 			
-			for (var rowIndex:int = 0; rowIndex < cellRowCount; ++rowIndex)
-			{
-				for (var columnIndex:int = 0; columnIndex < cellColumnCount; ++columnIndex)
-				{
-					var cell:Cell = cellRows[rowIndex][columnIndex];
-					cell.SetFlagMode(isFlagMode);
-				}
-			}
 		}
 		
 		private function Cell_Clicked(cell:Cell):void
@@ -113,7 +105,15 @@ package
 			if (!isMinefieldSetup)
 				SetupMinefield(cell.RowIndex, cell.ColumnIndex);
 			
-			// TODO: Flag mode
+			// Check for flag mode
+			if (isFlagMode)
+			{
+				cell.ToggleFlag();
+				return;
+			}
+			// Check whether cell was previously flagged, ignoring the click
+			if (cell.IsFlagged)
+				return;
 			
 			cell.Reveal();
 			++revealedCellCount;
@@ -125,7 +125,7 @@ package
 			{
 				if (cell.AdjacentMineCount == 0)
 					FloodReveal(cell.RowIndex, cell.ColumnIndex);
-				if (revealedCellCount > safeCellCount)
+				if (revealedCellCount >= safeCellCount)
 					EndGame(true);
 			}
 		}
@@ -148,12 +148,16 @@ package
 		{
 			isPlaying = false;
 			
-			DeactivateAndRevealAllMines();
-			
 			if (playerWins)
 			{
+				DeactivateAndFlagAllMines();
+				
 				winNotice = new WinNotice();
 				add(winNotice);
+			}
+			else
+			{
+				DeactivateAndRevealAllMines();
 			}
 		}
 		
@@ -202,7 +206,7 @@ package
 				default:
 					cellRowCount = 16;
 					cellColumnCount = 24;
-					mineCount = 25;
+					mineCount = 5;
 					break;
 			}
 		}
@@ -273,12 +277,26 @@ package
 					var cell:Cell = cellRows[rowIndex][columnIndex];
 					if (!cell.IsRevealed)
 					{
-						if (cell.IsMine)
+						if (cell.IsMine || cell.IsFlagged)
 							cell.Reveal(false);
 						else
 							cell.Deactivate();
 					}
 					cell.Shake();
+				}
+			}
+		}
+		
+		private function DeactivateAndFlagAllMines():void
+		{
+			for (var rowIndex:int = 0; rowIndex < cellRowCount; ++rowIndex)
+			{
+				for (var columnIndex:int = 0; columnIndex < cellColumnCount; ++columnIndex)
+				{
+					var cell:Cell = cellRows[rowIndex][columnIndex];
+					if (cell.IsMine && !cell.IsFlagged)
+						cell.ToggleFlag();
+					cell.Deactivate();
 				}
 			}
 		}
@@ -294,8 +312,15 @@ package
 		private function FloodReveal(rowIndex:int, columnIndex:int):void
 		{
 			var cell:Cell = cellRows[rowIndex][columnIndex];
-			cell.Reveal();
-			++revealedCellCount;
+			
+			if (cell.IsFlagged)
+				return;
+			
+			if (!cell.IsRevealed)
+			{
+				cell.Reveal();
+				++revealedCellCount;
+			}
 			
 			// Do no further processing if the cell has adjacent mines
 			if (cell.AdjacentMineCount != 0)

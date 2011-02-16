@@ -30,25 +30,19 @@ package
 		[Embed(source = "../assets/graphics/CellDown.png")]
 		public static const CELL_DOWN_GRAPHIC:Class;
 		
+		[Embed(source = "../assets/graphics/FlaggedCell.png")]
+		public static const FLAGGED_CELL_GRAPHIC:Class;
+		
 		[Embed(source = "../assets/graphics/EmptyCell.png")]
 		public static const EMPTY_CELL_GRAPHIC:Class;
-		
-		[Embed(source = "../assets/graphics/FlagCell.png")]
-		public static const FLAG_CELL_GRAPHIC:Class;
-		
-		[Embed(source = "../assets/graphics/FlagCellOver.png")]
-		public static const FLAG_CELL_OVER_GRAPHIC:Class;
-		
-		[Embed(source = "../assets/graphics/FlagCellDown.png")]
-		public static const FLAG_CELL_DOWN_GRAPHIC:Class;
-		
-		[Embed(source = "../assets/graphics/FlagEmptyCell.png")]
-		public static const FLAG_EMPTY_CELL_GRAPHIC:Class;
 		
 		[Embed(source = "../assets/graphics/ExplodedMineCell.png")]
 		public static const EXPLODED_MINE_CELL_GRAPHIC:Class;
 		
 		[Embed(source = "../assets/graphics/RevealedMineCell.png")]
 		public static const REVEALED_MINE_CELL_GRAPHIC:Class;
+		
+		[Embed(source = "../assets/graphics/FlaggedWrongCell.png")]
+		public static const FLAGGED_WRONG_CELL_GRAPHIC:Class;
 	}
 }

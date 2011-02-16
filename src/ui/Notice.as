@@ -10,7 +10,7 @@ package ui
 	 */
 	public class Notice extends Entity
 	{
-		private var text:Text;
+		protected var text:Text;
 		
 		public function Notice(message:String, color:int, size:int = 72):void
 		{
