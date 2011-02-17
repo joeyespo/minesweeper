@@ -1,5 +1,6 @@
 package  
 {
+	import flash.display.MovieClip;
 	import net.flashpunk.FP;
 	import net.flashpunk.Graphic;
 	import net.flashpunk.graphics.Image;
@@ -212,6 +213,7 @@ package
 		
 		private function Reset():void
 		{
+			new MovieClip
 			if (winNotice != null)
 			{
 				remove(winNotice);
@@ -230,11 +232,14 @@ package
 			
 			isMinefieldSetup = false;
 			score = 0;
-			isFlagModeByButton = false;
-			isFlagModeByShift = false;
 			revealedCellCount = 0;
 			safeCellCount = 0;
 			activeFlagCount = 0;
+			
+			isFlagModeByButton = false;
+			isFlagModeByShift = false;
+			
+			FlagModeChanged();
 		}
 		
 		private function SetupDifficulty():void
