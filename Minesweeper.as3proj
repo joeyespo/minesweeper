@@ -72,6 +72,7 @@
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>
     <hidden path="docs" />
+    <hidden path=".hg" />
   </hiddenPaths>
   <!-- Executed before build -->
   <preBuildCommand />
