@@ -1,0 +1,7 @@
+Minesweeper TODO
+================
+
+- Blink the "Restart" button
+- Rename "Restart" to "New Game" or split to: "Easy" "Medium" and "Hard" buttons, with a "New Game" label before it
+- Ability to drag a flag onto a mine, as well as have it toggle "flag mode"
+- Background and cell colors change to green when in "flag mode" (note: it's yellow now, not green)
