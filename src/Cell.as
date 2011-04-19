@@ -1,10 +1,12 @@
 package  
 {
 	import flash.display.BitmapData;
+	import flash.filters.ConvolutionFilter;
 	import flash.geom.ColorTransform;
 	import flash.geom.Point;
 	import flash.text.Font;
 	import flash.text.TextFormat;
+	import net.flashpunk.FP;
 	import net.flashpunk.graphics.Image;
 	import net.flashpunk.graphics.Text;
 	import net.flashpunk.tweens.motion.LinearMotion;
@@ -49,10 +51,17 @@ package
 		private static var ExplodedMineCellGraphic:Image = new Image(Assets.EXPLODED_MINE_CELL_GRAPHIC);
 		private static var RevealedMineCellGraphic:Image = new Image(Assets.REVEALED_MINE_CELL_GRAPHIC);
 		private static var FlaggedWrongCellGraphic:Image = new Image(Assets.FLAGGED_WRONG_CELL_GRAPHIC);
+		private static var jumpGravity:Number = 1;
 		
+		private var isInUse:Boolean = true;
 		private var rowIndex:int;
 		private var columnIndex:int;
 		private var clickHandler:Function;
+		
+		private var isJumping:Boolean = false;
+		private var isFalling:Boolean = false;
+		private var isRestoring:Boolean = false;
+		private var velocity:Number;
 		
 		private var adjacentMineCount:int = 0;
 		private var isMine:Boolean = false;
@@ -64,10 +73,6 @@ package
 		private var shakeCount:int = 0;
 		private var shakeOffsetX:Number = 0;
 		private var shakeOffsetY:Number = 0;
-		
-		private var isJumping:Boolean = false;
-		private var jumpGravity:Number = 1;
-		private var jumpVelocity:Number;
 		
 		public function Cell(rowIndex:int, columnIndex:int, clickHandler:Function):void
 		{
@@ -121,15 +126,38 @@ package
 		{
 			super.update();
 			
-			if (isJumping)
+			// Velocity-related motion
+			if (isRestoring)
 			{
-				y -= jumpVelocity;
-				if (y < location.y)
-					jumpVelocity -= jumpGravity;
-				else
+				// Determine which direction the cell is being restored from amd update the position
+				var fromTop:Boolean = y < location.y;
+				y -= velocity;
+				// Check whether restoring is complete
+				if ((fromTop && y >= location.y) || (!fromTop && y <= location.y))
+				{
+					y = location.y;
+					isInUse = true;
+					isRestoring = false;
+				}
+			}
+			else if (isJumping)
+			{
+				y -= velocity;
+				velocity -= jumpGravity;
+				if (y >= location.y)
 				{
 					isJumping = false;
 					y = location.y;
+				}
+			}
+			else if (isFalling)
+			{
+				y -= velocity;
+				velocity -= jumpGravity;
+				if (y >= FP.height + (rowIndex * CellSize))
+				{
+					y = FP.height + (rowIndex * CellSize);
+					isFalling = false;
 				}
 			}
 			
@@ -152,7 +180,7 @@ package
 		
 		private function onClick():void
 		{
-			if (isDeactivated)
+			if (isDeactivated || !isInUse)
 				return;
 			
 			if (clickHandler != null)
@@ -257,14 +285,24 @@ package
 			down = normal;
 		}
 		
+		/**
+		 * Makes the cell "jump" with a random initial velocity.
+		 */
 		public function Jump():void
 		{
+			if (isRestoring)
+				return;
+			shakeCount = 0;
 			x = location.x;
 			y = location.y;
-			jumpVelocity = 1 + Math.random() * 5;
+			
+			velocity = 1 + Math.random() * 5;
 			isJumping = true;
 		}
 		
+		/**
+		 * Makes the cell "shake" at a random direction.
+		 */
 		public function Shake(power:int = 6, duration:int = 20):void
 		{
 			shakeCount = duration;
@@ -294,6 +332,42 @@ package
 				hover = CellHoverGraphic;
 				down = CellDownGraphic;
 			}
+		}
+		
+		/**
+		 * Sets whether or not to use the cell.
+		 */
+		public function SetIsInUse(isInUse:Boolean):void
+		{
+			var wasInUse:Boolean = this.isInUse;
+			this.isInUse = isInUse;
+			if (!isInUse && wasInUse)
+				Fall();
+			else if (isInUse && !wasInUse)
+				Restore();
+		}
+		
+		private function Fall():void
+		{
+			isRestoring = false;
+			velocity = 0;
+			shakeCount = 0;
+			x = location.x;
+			
+			if(y == location.y)
+				Jump();
+			isFalling = true;
+		}
+		
+		private function Restore():void
+		{
+			isFalling = false;
+			isJumping = false;
+			shakeCount = 0;
+			x = location.x;
+			
+			velocity = 20 + Math.random() * 30;
+			isRestoring = true;
 		}
 	}
 }

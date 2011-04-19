@@ -1,12 +1,14 @@
 package  
 {
 	import flash.display.MovieClip;
+	import flash.utils.Timer;
 	import net.flashpunk.FP;
 	import net.flashpunk.Graphic;
 	import net.flashpunk.graphics.Image;
 	import net.flashpunk.graphics.Text;
 	import net.flashpunk.Tween;
 	import net.flashpunk.tweens.misc.ColorTween;
+	import net.flashpunk.tweens.misc.NumTween;
 	import net.flashpunk.tweens.motion.LinearMotion;
 	import net.flashpunk.utils.Input;
 	import net.flashpunk.utils.Key;
@@ -23,13 +25,36 @@ package
 	{
 		private static var FlagButtonGraphic:Image = new Image(Assets.FLAG_BUTTON_GRAPHIC);
 		private static var FlagButtonToggledGraphic:Image = new Image(Assets.FLAG_BUTTON_TOGGLED_GRAPHIC);
+		private static var DifficultyButtonsWidth:int = 75;
+		private static var DifficultyButtonsDistance:int = DifficultyButtonsWidth + 4;
+		private static var DifficultyButtonsTime:int = 60;
+		private static var NewGameHoverTime:int = 10;
+		private static var MaxCellRowCount:int = 16;
+		private static var MaxCellColumnCount:int = 24;
+		
+		private static const EASY:int = 0;
+		private static const MEDIUM:int = 1;
+		private static const HARD:int = 2;
 		
 		private var winNotice:WinNotice = null;
 		private var mineCountLabel:PunkLabel;
-		private var restartButton:PunkButton;
 		private var flagButton:PunkButton;
+		private var newGameButton:PunkButton;
+		private var easyButton:PunkButton;
+		private var mediumButton:PunkButton;
+		private var hardButton:PunkButton;
+		private var difficultyButtonsVisible:Boolean;
+		private var leftDifficultyButton:PunkButton;
+		private var rightDifficultyButton:PunkButton;
+		private var difficultyButtonsTween:NumTween;
+		private var difficultyButtonsTimeRemaining:int;
+		private var newGameHoverCountdown:int;
+		// Keep difficulty buttons from being pressed while animating or behind the New Game button
+		private var canChangeDifficulty:Boolean = false;
 		
 		private var difficulty:int;
+		private var cellRowOffset:int;
+		private var cellColumnOffset:int;
 		private var cellRowCount:int;
 		private var cellColumnCount:int;
 		private var mineCount:int;
@@ -49,11 +74,12 @@ package
 		{
 		}
 		
-		override public function begin():void 
+		override public function begin():void
 		{
-			difficulty = 2;
+			AddAllCells();
+			
+			difficulty = HARD;
 			SetupDifficulty();
-			AddCells();
 			
 			PunkLabel.size = 24;
 			mineCountLabel = new PunkLabel("Mines: 0", 4, 4, 300, 32);
@@ -61,11 +87,32 @@ package
 			mineCountLabel.background = false;
 			add(mineCountLabel);
 			
-			restartButton = new PunkButton((FP.width - 60) / 2, 4, 60, 24, "", Restart_Clicked);
-			restartButton.normal = new Image(Assets.RESTART_BUTTON_GRAPHIC);
-			restartButton.hover = new Image(Assets.RESTART_BUTTON_DOWN_GRAPHIC);
-			restartButton.down = restartButton.hover;
-			add(restartButton);
+			easyButton = new PunkButton((FP.width - DifficultyButtonsWidth) / 2, 4, DifficultyButtonsWidth, 36, "", Easy_Clicked);
+			easyButton.normal = new Image(Assets.EASY_BUTTON_GRAPHIC);
+			easyButton.hover = new Image(Assets.EASY_BUTTON_OVER_GRAPHIC);
+			easyButton.down = new Image(Assets.EASY_BUTTON_DOWN_GRAPHIC);
+			easyButton.visible = false;
+			add(easyButton);
+			
+			mediumButton = new PunkButton((FP.width - DifficultyButtonsWidth) / 2, 4, DifficultyButtonsWidth, 36, "", Medium_Clicked);
+			mediumButton.normal = new Image(Assets.MEDIUM_BUTTON_GRAPHIC);
+			mediumButton.hover = new Image(Assets.MEDIUM_BUTTON_OVER_GRAPHIC);
+			mediumButton.down = new Image(Assets.MEDIUM_BUTTON_DOWN_GRAPHIC);
+			mediumButton.visible = false;
+			add(mediumButton);
+			
+			hardButton = new PunkButton((FP.width - DifficultyButtonsWidth) / 2, 4, DifficultyButtonsWidth, 36, "", Hard_Clicked);
+			hardButton.normal = new Image(Assets.HARD_BUTTON_GRAPHIC);
+			hardButton.hover = new Image(Assets.HARD_BUTTON_OVER_GRAPHIC);
+			hardButton.down = new Image(Assets.HARD_BUTTON_DOWN_GRAPHIC);
+			hardButton.visible = false;
+			add(hardButton);
+			
+			newGameButton = new PunkButton((FP.width - 101) / 2, 4, 101, 36, "", NewGame_Clicked);
+			newGameButton.normal = new Image(Assets.NEWGAME_BUTTON_GRAPHIC);
+			newGameButton.hover = new Image(Assets.NEWGAME_BUTTON_OVER_GRAPHIC);
+			newGameButton.down = new Image(Assets.NEWGAME_BUTTON_DOWN_GRAPHIC);
+			add(newGameButton);
 			
 			flagButton = new PunkButton(((FP.width) - 32) - (8), 4, 32, 32, "", FlagButton_Clicked);
 			flagButton.normal = FlagButtonGraphic;
@@ -89,8 +136,8 @@ package
 			
 			if (cellRows != null)
 			{
-				for (var rowIndex:int = 0; rowIndex < cellRowCount; ++rowIndex)
-					for (var columnIndex:int = 0; columnIndex < cellColumnCount; ++columnIndex)
+				for (var rowIndex:int = 0; rowIndex < MaxCellRowCount; ++rowIndex)
+					for (var columnIndex:int = 0; columnIndex < MaxCellColumnCount; ++columnIndex)
 						remove(cellRows[rowIndex][columnIndex]);
 				cellRows = null;
 			}
@@ -98,6 +145,9 @@ package
 		
 		override public function update():void 
 		{
+			var mouseX:int = Input.mouseX;
+			var mouseY:int = Input.mouseY;
+			
 			if (isPlaying)
 			{
 				// Check for and set flag mode using the shortcut key
@@ -111,14 +161,72 @@ package
 			if (colorTween != null)
 				FP.screen.color = colorTween.color;
 			
+			if (difficultyButtonsTween != null)
+			{
+				leftDifficultyButton.x = newGameButton.left - difficultyButtonsTween.value;
+				rightDifficultyButton.x = (newGameButton.right - DifficultyButtonsWidth) + difficultyButtonsTween.value;
+			}
+			if (difficultyButtonsTimeRemaining > 0)
+			{
+				if (mouseY < newGameButton.bottom && mouseX >= newGameButton.x - DifficultyButtonsWidth - 4 && mouseX < newGameButton.right + DifficultyButtonsWidth + 4)
+					difficultyButtonsTimeRemaining = DifficultyButtonsTime;
+				else if(--difficultyButtonsTimeRemaining <= 0)
+					HideDifficultyButtons();
+			}
+			
+			// Check whether to show the new game companion buttons
+			if (!difficultyButtonsVisible && mouseX >= newGameButton.x && mouseX < newGameButton.right && mouseY >= newGameButton.y && mouseY < newGameButton.bottom)
+			{
+				if (newGameHoverCountdown > 0)
+				{
+					if (--newGameHoverCountdown <= 0)
+						ShowDifficultyButtons();
+				}
+				else
+					newGameHoverCountdown = NewGameHoverTime;
+			}
+			else
+			{
+				newGameHoverCountdown = 0;
+			}
+			
 			super.update();
 		}
 		
-		private function Restart_Clicked():void
+		private function NewGame_Clicked():void
 		{
-			// TODO: Select difficulty
 			// TODO: Confirm, if game is in progress
 			
+			NewGame();
+		}
+		
+		private function Easy_Clicked():void
+		{
+			if (!canChangeDifficulty || !easyButton.visible)
+				return;
+			difficulty = 0;
+			SetupDifficulty();
+			ShowDifficultyButtons();
+			NewGame();
+		}
+		
+		private function Medium_Clicked():void
+		{
+			if (!canChangeDifficulty || !mediumButton.visible)
+				return;
+			difficulty = 1;
+			SetupDifficulty();
+			ShowDifficultyButtons();
+			NewGame();
+		}
+		
+		private function Hard_Clicked():void
+		{
+			if (!canChangeDifficulty || !hardButton.visible)
+				return;
+			difficulty = 2;
+			SetupDifficulty();
+			ShowDifficultyButtons();
 			NewGame();
 		}
 		
@@ -184,7 +292,103 @@ package
 			if ((FP.screen.color & 0x00FFFFFF) != 0x000000)
 				FadeToColor(0x000000);
 			
+			if(!difficultyButtonsVisible)
+				ShowDifficultyButtons();
+			
 			isPlaying = true;
+		}
+		
+		/**
+		 * Animates the difficulty buttons.
+		 */
+		private function ShowDifficultyButtons():void
+		{
+			AnimateDifficultyButtons();
+		}
+		
+		/**
+		 * Animates the difficulty buttons.
+		 */
+		private function HideDifficultyButtons():void
+		{
+			AnimateDifficultyButtons(true);
+		}
+		
+		/**
+		 * Animates the difficulty buttons.
+		 */
+		private function AnimateDifficultyButtons(reverse:Boolean=false, duration:Number=0.2):void
+		{
+			easyButton.visible = false;
+			mediumButton.visible = false;
+			hardButton.visible = false;
+			canChangeDifficulty = false;
+			
+			// Determine which difficulty buttons to use
+			switch(difficulty)
+			{
+				case EASY:
+					leftDifficultyButton = mediumButton;
+					rightDifficultyButton = hardButton;
+					break;
+				case MEDIUM:
+					leftDifficultyButton = easyButton;
+					rightDifficultyButton = hardButton;
+					break;
+				case HARD:
+					leftDifficultyButton = easyButton;
+					rightDifficultyButton = mediumButton;
+					break;
+			}
+			
+			leftDifficultyButton.visible = true;
+			rightDifficultyButton.visible = true;
+			difficultyButtonsVisible = true;
+			
+			if (difficultyButtonsTween != null)
+			{
+				removeTween(difficultyButtonsTween);
+				difficultyButtonsTween = null;
+			}
+			difficultyButtonsTween = new NumTween(function():void { AnimateDifficultyButtonsComplete(reverse); } );
+			
+			var start:int;
+			var stop:int;
+			if (!reverse)
+			{
+				start = 0;
+				stop = DifficultyButtonsDistance;
+				difficultyButtonsTimeRemaining = DifficultyButtonsTime;
+			}
+			else
+			{
+				start = DifficultyButtonsDistance;
+				stop = 0;
+				difficultyButtonsTimeRemaining = 0;
+			}
+			
+			difficultyButtonsTween.tween(start, stop, duration);
+			addTween(difficultyButtonsTween);
+		}
+		
+		private function AnimateDifficultyButtonsComplete(reverse:Boolean):void
+		{
+			if (reverse)
+			{
+				leftDifficultyButton.x = newGameButton.left;
+				rightDifficultyButton.x = newGameButton.right - DifficultyButtonsWidth;
+				leftDifficultyButton.visible = false;
+				rightDifficultyButton.visible = false;
+				difficultyButtonsVisible = false;
+			}
+			else
+			{
+				leftDifficultyButton.x = newGameButton.left - (DifficultyButtonsWidth + 4);
+				rightDifficultyButton.x = newGameButton.right + 4;
+				canChangeDifficulty = true;
+			}
+			
+			difficultyButtonsTween = null;
 		}
 		
 		private function EndGame(playerWins:Boolean):void
@@ -220,9 +424,11 @@ package
 				winNotice = null;
 			}
 			
-			for (var rowIndex:int = 0; rowIndex < cellRowCount; ++rowIndex)
+			var cellRowStop:int = cellRowOffset + cellRowCount;
+			var cellColumnStop:int = cellColumnOffset + cellColumnCount;
+			for (var rowIndex:int = cellRowOffset; rowIndex < cellRowStop; ++rowIndex)
 			{
-				for (var columnIndex:int = 0; columnIndex < cellColumnCount; ++columnIndex)
+				for (var columnIndex:int = cellColumnOffset; columnIndex < cellColumnStop; ++columnIndex)
 				{
 					var cell:Cell = cellRows[rowIndex][columnIndex];
 					cell.Reset();
@@ -244,27 +450,32 @@ package
 		
 		private function SetupDifficulty():void
 		{
-			// TODO: Tweak these settings
-			// TODO: Add/remove or show/hide cells
-			
 			switch(difficulty)
 			{
-				case 0:
-					cellRowCount = 6;
-					cellColumnCount = 12;
-					mineCount = 3;
+				case EASY:
+					cellRowOffset = 2;
+					cellColumnOffset = 7;
+					cellRowCount = 8;
+					cellColumnCount = 10;
+					mineCount = 5;
 					break;
-				case 1:
+				case MEDIUM:
+					cellRowOffset = 1;
+					cellColumnOffset = 4;
 					cellRowCount = 12;
 					cellColumnCount = 16;
-					mineCount = 6;
+					mineCount = 15;
 					break;
-				default:
+				case HARD:
+					cellRowOffset = 0;
+					cellColumnOffset = 0;
 					cellRowCount = 16;
 					cellColumnCount = 24;
-					mineCount = 25;
+					mineCount = 50;
 					break;
 			}
+			
+			UpdateAllCells();
 		}
 		
 		private function get IsFlagMode():Boolean
@@ -293,19 +504,35 @@ package
 			addTween(colorTween);
 		}
 		
-		private function AddCells():void
+		private function AddAllCells():void
 		{
 			cellRows = [];
-			for (var rowIndex:int = 0; rowIndex < cellRowCount; ++rowIndex)
+			for (var rowIndex:int = 0; rowIndex < MaxCellRowCount; ++rowIndex)
 			{
 				var column:Array = [];
-				for (var columnIndex:int = 0; columnIndex < cellColumnCount; ++columnIndex)
+				for (var columnIndex:int = 0; columnIndex < MaxCellColumnCount; ++columnIndex)
 				{
 					var cell:Cell = new Cell(rowIndex, columnIndex, Cell_Clicked);
 					column.push(cell);
 					add(cell);
 				}
 				cellRows.push(column);
+			}
+		}
+		
+		private function UpdateAllCells():void
+		{
+			for (var rowIndex:int = 0; rowIndex < MaxCellRowCount; ++rowIndex)
+			{
+				for (var columnIndex:int = 0; columnIndex < MaxCellColumnCount; ++columnIndex)
+				{
+					var cell:Cell = cellRows[rowIndex][columnIndex];
+					var isInUse:Boolean = rowIndex >= cellRowOffset && rowIndex < cellRowOffset + cellRowCount
+						&& columnIndex >= cellColumnOffset && columnIndex < cellColumnOffset + cellColumnCount;
+					if(!isInUse)
+						cell.Reset();
+					cell.SetIsInUse(isInUse);
+				}
 			}
 		}
 		
@@ -317,8 +544,8 @@ package
 			for (var mineIndex:int = 0; mineIndex < mineCount; )
 			{
 				// Get a random cell
-				var rowIndex:int = Rand(cellRowCount);
-				var columnIndex:int = Rand(cellColumnCount);
+				var rowIndex:int = Rand(cellRowCount) + cellRowOffset;
+				var columnIndex:int = Rand(cellColumnCount) + cellColumnOffset;
 				var cell:Cell = cellRows[rowIndex][columnIndex];
 				
 				// Skip, if this is the first row/column the player clicked on
@@ -352,9 +579,11 @@ package
 		
 		private function DeactivateAndRevealAllMines():void
 		{
-			for (var rowIndex:int = 0; rowIndex < cellRowCount; ++rowIndex)
+			var cellRowStop:int = cellRowOffset + cellRowCount;
+			var cellColumnStop:int = cellColumnOffset + cellColumnCount;
+			for (var rowIndex:int = cellRowOffset; rowIndex < cellRowStop; ++rowIndex)
 			{
-				for (var columnIndex:int = 0; columnIndex < cellColumnCount; ++columnIndex)
+				for (var columnIndex:int = cellColumnOffset; columnIndex < cellColumnStop; ++columnIndex)
 				{
 					var cell:Cell = cellRows[rowIndex][columnIndex];
 					if (!cell.IsRevealed)
@@ -371,9 +600,11 @@ package
 		
 		private function DeactivateAndFlagAllMines():void
 		{
-			for (var rowIndex:int = 0; rowIndex < cellRowCount; ++rowIndex)
+			var cellRowStop:int = cellRowOffset + cellRowCount;
+			var cellColumnStop:int = cellColumnOffset + cellColumnCount;
+			for (var rowIndex:int = cellRowOffset; rowIndex < cellRowStop; ++rowIndex)
 			{
-				for (var columnIndex:int = 0; columnIndex < cellColumnCount; ++columnIndex)
+				for (var columnIndex:int = cellColumnOffset; columnIndex < cellColumnStop; ++columnIndex)
 				{
 					var cell:Cell = cellRows[rowIndex][columnIndex];
 					if (cell.IsMine && !cell.IsFlagged)
@@ -385,7 +616,7 @@ package
 		
 		private function AddAdjacent(rowIndex:int, columnIndex:int):void
 		{
-			if (rowIndex < 0 || rowIndex >= cellRowCount || columnIndex < 0 || columnIndex >= cellColumnCount)
+			if (rowIndex < cellRowOffset || rowIndex >= cellRowOffset + cellRowCount || columnIndex < cellColumnOffset || columnIndex >= cellColumnOffset + cellColumnCount)
 				return;
 			var cell:Cell = cellRows[rowIndex][columnIndex];
 			cell.IncreaseAdjacentMineCount();
@@ -422,7 +653,7 @@ package
 		
 		private function FloodRevealAdjacent(rowIndex:int, columnIndex:int):void
 		{
-			if (rowIndex < 0 || rowIndex >= cellRowCount || columnIndex < 0 || columnIndex >= cellColumnCount)
+			if (rowIndex < cellRowOffset || rowIndex >= cellRowOffset + cellRowCount || columnIndex < cellColumnOffset || columnIndex >= cellColumnOffset + cellColumnCount)
 				return;
 			
 			// Get non-mine cell and recurse if it's not a mine and not already revealed
