@@ -8,3 +8,4 @@ x Blink the "Restart" button
 - Show [Flag] x N in place of "Mines: N"
 - Show "Hold SHIFT while clicking to place a flag" somewhere (tooltip?)
 - Show win count
+- Unlockable (after winning all 3 difficulties): "Expert" mode, which gets displayed below the "New Game" button
