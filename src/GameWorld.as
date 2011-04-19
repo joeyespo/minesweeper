@@ -23,6 +23,10 @@ package
 	 */
 	public class GameWorld extends World
 	{
+		private static const EASY:int = 0;
+		private static const MEDIUM:int = 1;
+		private static const HARD:int = 2;
+		
 		private static var FlagButtonGraphic:Image = new Image(Assets.FLAG_BUTTON_GRAPHIC);
 		private static var FlagButtonToggledGraphic:Image = new Image(Assets.FLAG_BUTTON_TOGGLED_GRAPHIC);
 		private static var DifficultyButtonsWidth:int = 75;
@@ -32,9 +36,7 @@ package
 		private static var MaxCellRowCount:int = 16;
 		private static var MaxCellColumnCount:int = 24;
 		
-		private static const EASY:int = 0;
-		private static const MEDIUM:int = 1;
-		private static const HARD:int = 2;
+		private static var InitialDifficulty:int = MEDIUM;
 		
 		private var winNotice:WinNotice = null;
 		private var mineCountLabel:PunkLabel;
@@ -76,11 +78,6 @@ package
 		
 		override public function begin():void
 		{
-			AddAllCells();
-			
-			difficulty = HARD;
-			SetupDifficulty();
-			
 			PunkLabel.size = 24;
 			mineCountLabel = new PunkLabel("Mines: 0", 4, 4, 300, 32);
 			mineCountLabel.color = 0xFFFFFF;
@@ -120,6 +117,9 @@ package
 			flagButton.down = new Image(Assets.FLAG_BUTTON_DOWN_GRAPHIC);
 			add(flagButton);
 			
+			AddAllCells();
+			
+			UpdateDifficulty(InitialDifficulty, true);
 			NewGame(true);
 		}
 		
@@ -204,8 +204,7 @@ package
 		{
 			if (!canChangeDifficulty || !easyButton.visible)
 				return;
-			difficulty = 0;
-			SetupDifficulty();
+			UpdateDifficulty(EASY);
 			ShowDifficultyButtons();
 			NewGame();
 		}
@@ -214,8 +213,7 @@ package
 		{
 			if (!canChangeDifficulty || !mediumButton.visible)
 				return;
-			difficulty = 1;
-			SetupDifficulty();
+			UpdateDifficulty(MEDIUM);
 			ShowDifficultyButtons();
 			NewGame();
 		}
@@ -224,8 +222,7 @@ package
 		{
 			if (!canChangeDifficulty || !hardButton.visible)
 				return;
-			difficulty = 2;
-			SetupDifficulty();
+			UpdateDifficulty(HARD);
 			ShowDifficultyButtons();
 			NewGame();
 		}
@@ -448,34 +445,36 @@ package
 			FlagModeChanged();
 		}
 		
-		private function SetupDifficulty():void
+		private function UpdateDifficulty(difficulty:int, isFirstGame:Boolean = false):void
 		{
+			this.difficulty = difficulty;
+			
 			switch(difficulty)
 			{
 				case EASY:
 					cellRowOffset = 2;
-					cellColumnOffset = 7;
-					cellRowCount = 8;
-					cellColumnCount = 10;
-					mineCount = 5;
-					break;
-				case MEDIUM:
-					cellRowOffset = 1;
 					cellColumnOffset = 4;
 					cellRowCount = 12;
 					cellColumnCount = 16;
-					mineCount = 15;
+					mineCount = 10;
+					break;
+				case MEDIUM:
+					cellRowOffset = 1;
+					cellColumnOffset = 2;
+					cellRowCount = 14;
+					cellColumnCount = 20;
+					mineCount = 25;
 					break;
 				case HARD:
 					cellRowOffset = 0;
 					cellColumnOffset = 0;
 					cellRowCount = 16;
 					cellColumnCount = 24;
-					mineCount = 50;
+					mineCount = 90;
 					break;
 			}
 			
-			UpdateAllCells();
+			UpdateAllCells(!isFirstGame);
 		}
 		
 		private function get IsFlagMode():Boolean
@@ -520,7 +519,7 @@ package
 			}
 		}
 		
-		private function UpdateAllCells():void
+		private function UpdateAllCells(animate:Boolean = true):void
 		{
 			for (var rowIndex:int = 0; rowIndex < MaxCellRowCount; ++rowIndex)
 			{
@@ -531,7 +530,7 @@ package
 						&& columnIndex >= cellColumnOffset && columnIndex < cellColumnOffset + cellColumnCount;
 					if(!isInUse)
 						cell.Reset();
-					cell.SetIsInUse(isInUse);
+					cell.SetIsInUse(isInUse, animate);
 				}
 			}
 		}

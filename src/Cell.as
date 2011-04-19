@@ -136,7 +136,6 @@ package
 				if ((fromTop && y >= location.y) || (!fromTop && y <= location.y))
 				{
 					y = location.y;
-					isInUse = true;
 					isRestoring = false;
 				}
 			}
@@ -337,37 +336,55 @@ package
 		/**
 		 * Sets whether or not to use the cell.
 		 */
-		public function SetIsInUse(isInUse:Boolean):void
+		public function SetIsInUse(isInUse:Boolean, animate:Boolean = true):void
 		{
 			var wasInUse:Boolean = this.isInUse;
+			
 			this.isInUse = isInUse;
+			
 			if (!isInUse && wasInUse)
-				Fall();
+				Fall(animate);
 			else if (isInUse && !wasInUse)
-				Restore();
+				Restore(animate);
 		}
 		
-		private function Fall():void
+		private function Fall(animate:Boolean = true):void
 		{
 			isRestoring = false;
 			velocity = 0;
 			shakeCount = 0;
 			x = location.x;
 			
-			if(y == location.y)
-				Jump();
-			isFalling = true;
+			if (animate)
+			{
+				if(y == location.y)
+					Jump();
+				isFalling = true;
+			}
+			else
+			{
+				y = FP.height + (rowIndex * CellSize);
+				isFalling = false;
+			}
 		}
 		
-		private function Restore():void
+		private function Restore(animate:Boolean = true):void
 		{
 			isFalling = false;
 			isJumping = false;
 			shakeCount = 0;
 			x = location.x;
 			
-			velocity = 20 + Math.random() * 30;
-			isRestoring = true;
+			if (animate)
+			{
+				velocity = 20 + Math.random() * 30;
+				isRestoring = true;
+			}
+			else
+			{
+				y = location.y;
+				isRestoring = false;
+			}
 		}
 	}
 }
