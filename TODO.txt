@@ -5,3 +5,6 @@ Minesweeper TODO
 x Blink the "Restart" button
 * Rename "Restart" to "New Game" or split to: "Easy" "Medium" and "Hard" buttons, with a "New Game" label before it
 - Ability to drag a flag onto a mine, as well as have it toggle "flag mode"
+- Show [Flag] x N in place of "Mines: N"
+- Show "Hold SHIFT while clicking to place a flag" somewhere (tooltip?)
+- Show win count
