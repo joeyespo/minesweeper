@@ -4,7 +4,7 @@ Minesweeper
 This is my first game written in ActionScript 3 for Flash. Enjoy.
 
 For feedback, please visit:
-http://www.joeyespo.com/minesweeper
+[http://www.joeyespo.com/minesweeper](http://www.joeyespo.com/minesweeper)
 
 
 Playing
